@@ -1,0 +1,1317 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WaSheet — Kirim WhatsApp & Email Massal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --green:#25D366;--green-dark:#128C7E;--green-light:#dcfce7;
+  --bg:#f8fafb;--surface:#fff;--border:#e5e7eb;--border-light:#f3f4f6;
+  --text:#111827;--muted:#6b7280;--muted2:#9ca3af;
+  --danger:#ef4444;--danger-light:#fef2f2;
+  --info:#3b82f6;--info-light:#eff6ff;
+  --warn:#f59e0b;--warn-light:#fffbeb;
+  --radius:10px;--radius-lg:14px;
+  --shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.05);
+  --shadow-md:0 4px 6px rgba(0,0,0,.07),0 2px 4px rgba(0,0,0,.06);
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer;border:none;outline:none}
+input,textarea,select{font-family:inherit;outline:none}
+
+/* Layout */
+.app{display:flex;height:100vh;overflow:hidden}
+.sidebar{width:240px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
+.main{flex:1;overflow-y:auto;display:flex;flex-direction:column}
+
+/* Sidebar */
+.sidebar-logo{padding:20px 16px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border-light)}
+.logo-icon{width:32px;height:32px;background:var(--green);border-radius:8px;display:flex;align-items:center;justify-content:center}
+.logo-icon svg{width:18px;height:18px;fill:#fff}
+.logo-text{font-size:16px;font-weight:600;letter-spacing:-.3px}
+.logo-tag{font-size:11px;color:var(--muted2);letter-spacing:.3px;text-transform:uppercase;margin-top:1px}
+
+.nav{flex:1;padding:8px}
+.nav-section{margin-bottom:4px}
+.nav-label{font-size:10px;font-weight:600;color:var(--muted2);text-transform:uppercase;letter-spacing:.8px;padding:8px 8px 4px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;cursor:pointer;color:var(--muted);font-size:13px;font-weight:500;transition:all .15s}
+.nav-item:hover{background:var(--bg);color:var(--text)}
+.nav-item.active{background:var(--green-light);color:var(--green-dark)}
+.nav-item svg{width:16px;height:16px;flex-shrink:0}
+.nav-item .badge{margin-left:auto;background:var(--green);color:#fff;font-size:10px;font-weight:600;padding:1px 6px;border-radius:20px}
+
+.sidebar-footer{padding:12px;border-top:1px solid var(--border-light)}
+.wa-status{display:flex;align-items:center;gap:8px;padding:10px;border-radius:var(--radius);background:var(--bg);cursor:pointer;transition:background .15s}
+.wa-status:hover{background:var(--border-light)}
+.status-dot{width:8px;height:8px;border-radius:50%;background:var(--muted2);flex-shrink:0;transition:background .3s}
+.status-dot.connected{background:var(--green)}
+.status-dot.connecting{background:var(--warn);animation:pulse .8s infinite}
+.status-text{font-size:12px;font-weight:500;flex:1}
+.status-sub{font-size:11px;color:var(--muted);margin-top:1px}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* Header */
+.page-header{padding:20px 28px;border-bottom:1px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.page-title{font-size:17px;font-weight:600;letter-spacing:-.3px}
+.page-sub{font-size:13px;color:var(--muted);margin-top:2px}
+.header-actions{display:flex;gap:8px}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;font-size:13px;font-weight:500;transition:all .15s;cursor:pointer;border:none}
+.btn svg{width:14px;height:14px;flex-shrink:0}
+.btn-primary{background:var(--green);color:#fff}
+.btn-primary:hover{background:var(--green-dark)}
+.btn-secondary{background:var(--surface);color:var(--text);border:1px solid var(--border)}
+.btn-secondary:hover{background:var(--bg)}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-danger:hover{opacity:.9}
+.btn-ghost{background:transparent;color:var(--muted);padding:6px 10px}
+.btn-ghost:hover{background:var(--bg);color:var(--text)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-sm{padding:5px 10px;font-size:12px}
+
+/* Cards */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow)}
+.card-header{padding:16px 20px;border-bottom:1px solid var(--border-light);display:flex;align-items:center;justify-content:space-between}
+.card-title{font-size:14px;font-weight:600}
+.card-body{padding:20px}
+
+/* Page content */
+.page-content{flex:1;padding:24px 28px;display:flex;flex-direction:column;gap:20px}
+
+/* Tabs */
+.tabs{display:flex;gap:2px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:3px;width:fit-content}
+.tab{padding:6px 16px;border-radius:7px;font-size:13px;font-weight:500;cursor:pointer;color:var(--muted);transition:all .15s;border:none;background:transparent}
+.tab.active{background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
+
+/* Form */
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-label{font-size:12px;font-weight:500;color:var(--muted)}
+.form-input{padding:8px 11px;border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text);background:var(--surface);transition:border-color .15s;width:100%}
+.form-input:focus{border-color:var(--green)}
+.form-input::placeholder{color:var(--muted2)}
+textarea.form-input{resize:vertical;line-height:1.6;min-height:80px}
+.form-hint{font-size:11px;color:var(--muted2)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+
+/* Table */
+.table-wrap{overflow-x:auto;border-radius:var(--radius)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{text-align:left;padding:9px 12px;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);background:var(--bg)}
+tbody td{padding:10px 12px;border-bottom:1px solid var(--border-light);vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--bg)}
+.td-name{font-weight:500}
+.td-phone{font-family:'JetBrains Mono',monospace;color:var(--muted)}
+
+/* Status badges */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500}
+.badge-success{background:var(--green-light);color:#166534}
+.badge-pending{background:var(--warn-light);color:#92400e}
+.badge-error{background:var(--danger-light);color:#991b1b}
+.badge-gray{background:var(--bg);color:var(--muted);border:1px solid var(--border)}
+
+/* Progress */
+.progress-bar{height:6px;background:var(--border-light);border-radius:20px;overflow:hidden}
+.progress-fill{height:100%;background:var(--green);border-radius:20px;transition:width .4s ease}
+
+/* Stats row */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;display:flex;flex-direction:column;gap:4px}
+.stat-value{font-size:22px;font-weight:600;letter-spacing:-.5px}
+.stat-label{font-size:12px;color:var(--muted)}
+.stat-change{font-size:11px;margin-top:4px}
+.stat-up{color:#166534}
+.stat-down{color:var(--danger)}
+
+/* QR Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:1000;backdrop-filter:blur(2px)}
+.modal{background:var(--surface);border-radius:var(--radius-lg);box-shadow:0 20px 60px rgba(0,0,0,.2);width:360px;overflow:hidden}
+.modal-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.modal-title{font-size:15px;font-weight:600}
+.modal-body{padding:24px;display:flex;flex-direction:column;align-items:center;gap:16px}
+.modal-footer{padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px}
+.qr-wrap{background:#fff;padding:16px;border-radius:12px;border:1px solid var(--border)}
+.qr-hint{text-align:center;font-size:13px;color:var(--muted);line-height:1.5}
+.close-btn{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted);background:transparent;transition:background .15s;border:none}
+.close-btn:hover{background:var(--bg)}
+
+/* Alert */
+.alert{padding:12px 16px;border-radius:var(--radius);font-size:13px;display:flex;align-items:flex-start;gap:10px;line-height:1.5}
+.alert svg{width:16px;height:16px;flex-shrink:0;margin-top:1px}
+.alert-info{background:var(--info-light);color:#1e40af;border:1px solid #bfdbfe}
+.alert-warn{background:var(--warn-light);color:#92400e;border:1px solid #fde68a}
+.alert-success{background:var(--green-light);color:#166534;border:1px solid #bbf7d0}
+
+/* Log */
+.log-wrap{background:#0f172a;border-radius:var(--radius-lg);padding:16px;font-family:'JetBrains Mono',monospace;font-size:12px;max-height:220px;overflow-y:auto;line-height:1.7}
+.log-line{display:flex;gap:10px}
+.log-time{color:#475569;flex-shrink:0}
+.log-ok{color:#4ade80}
+.log-err{color:#f87171}
+.log-info{color:#60a5fa}
+.log-warn{color:#fbbf24}
+
+/* Template vars */
+.var-chip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;background:var(--info-light);color:var(--info);border:1px solid #bfdbfe;border-radius:20px;font-size:11px;font-weight:500;cursor:pointer;margin:2px;font-family:'JetBrains Mono',monospace;transition:background .15s}
+.var-chip:hover{background:#dbeafe}
+
+/* Send progress */
+.send-progress{display:flex;flex-direction:column;gap:12px;padding:16px;background:var(--bg);border-radius:var(--radius);border:1px solid var(--border)}
+.send-info{display:flex;justify-content:space-between;align-items:center;font-size:13px}
+.send-count{font-weight:600}
+.send-eta{color:var(--muted);font-size:12px}
+
+/* Empty state */
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:48px;color:var(--muted);text-align:center}
+.empty-icon{width:48px;height:48px;background:var(--bg);border-radius:12px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border)}
+.empty-icon svg{width:22px;height:22px;color:var(--muted2)}
+.empty-title{font-size:14px;font-weight:500;color:var(--text)}
+.empty-sub{font-size:13px;max-width:280px;line-height:1.5}
+
+/* Tooltip */
+[title]{cursor:help}
+
+/* Chip input */
+.chip-input-wrap{border:1px solid var(--border);border-radius:8px;padding:6px 8px;display:flex;flex-wrap:wrap;gap:4px;background:var(--surface);cursor:text;min-height:38px;align-items:center;transition:border-color .15s}
+.chip-input-wrap:focus-within{border-color:var(--green)}
+.chip{display:inline-flex;align-items:center;gap:4px;background:var(--green-light);color:#166534;border-radius:20px;padding:2px 8px;font-size:12px;font-weight:500}
+.chip-x{cursor:pointer;line-height:1;margin-left:2px;opacity:.6}
+.chip-x:hover{opacity:1}
+.chip-input-inner{border:none;outline:none;font-size:13px;color:var(--text);background:transparent;min-width:120px;flex:1}
+
+/* Hidden */
+.hidden{display:none!important}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:20px}
+::-webkit-scrollbar-thumb:hover{background:var(--muted2)}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+      </div>
+      <div>
+        <div class="logo-text">WaSheet</div>
+        <div class="logo-tag">Kirim Massal</div>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <div class="nav-section">
+        <div class="nav-label">Menu</div>
+        <div class="nav-item active" onclick="showPage('dashboard')" id="nav-dashboard">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+          Dashboard
+        </div>
+        <div class="nav-item" onclick="showPage('contacts')" id="nav-contacts">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Kontak
+          <span class="badge" id="contact-badge">0</span>
+        </div>
+        <div class="nav-item" onclick="showPage('template')" id="nav-template">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          Template
+        </div>
+        <div class="nav-item" onclick="showPage('send')" id="nav-send">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          Kirim Pesan
+        </div>
+        <div class="nav-item" onclick="showPage('history')" id="nav-history">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Riwayat
+        </div>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-label">Integrasi</div>
+        <div class="nav-item" onclick="showPage('google')" id="nav-google">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+          Google Sheets
+        </div>
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="wa-status" onclick="openWAModal()" id="wa-status-btn">
+        <div class="status-dot" id="status-dot"></div>
+        <div>
+          <div class="status-text" id="status-text">Tidak Terhubung</div>
+          <div class="status-sub" id="status-sub">Klik untuk hubungkan</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+
+    <!-- DASHBOARD PAGE -->
+    <div id="page-dashboard">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Dashboard</div>
+          <div class="page-sub">Ringkasan aktivitas pengiriman</div>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-primary" onclick="showPage('send')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            Kirim Sekarang
+          </button>
+        </div>
+      </div>
+
+      <div class="page-content">
+        <div class="stats-row">
+          <div class="stat-card">
+            <div class="stat-label">Total Terkirim</div>
+            <div class="stat-value" id="stat-sent">0</div>
+            <div class="stat-change stat-up" id="stat-sent-change">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Berhasil</div>
+            <div class="stat-value" id="stat-ok">0</div>
+            <div class="stat-change" id="stat-ok-change">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Gagal</div>
+            <div class="stat-value" id="stat-fail">0</div>
+            <div class="stat-change" id="stat-fail-change">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Total Kontak</div>
+            <div class="stat-value" id="stat-contacts">0</div>
+            <div class="stat-change">tersimpan</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Pengiriman Terakhir</span>
+            <button class="btn btn-ghost btn-sm" onclick="showPage('history')">Lihat Semua →</button>
+          </div>
+          <div id="dashboard-recent">
+            <div class="empty-state">
+              <div class="empty-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+              </div>
+              <div class="empty-title">Belum ada pengiriman</div>
+              <div class="empty-sub">Mulai kirim pesan massal dengan klik tombol "Kirim Sekarang" di atas</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTACTS PAGE -->
+    <div id="page-contacts" class="hidden">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Kontak</div>
+          <div class="page-sub">Kelola daftar penerima pesan</div>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-secondary" onclick="importContactsCSV()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0018 9h-1.26A8 8 0 103 16.3"/></svg>
+            Import CSV
+          </button>
+          <button class="btn btn-primary" onclick="openAddContact()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Tambah Kontak
+          </button>
+        </div>
+      </div>
+
+      <div class="page-content">
+        <!-- Add form -->
+        <div class="card hidden" id="add-contact-form">
+          <div class="card-header">
+            <span class="card-title">Tambah Kontak Baru</span>
+            <button class="btn btn-ghost btn-sm" onclick="closeAddContact()">✕</button>
+          </div>
+          <div class="card-body">
+            <div class="form-row" style="margin-bottom:12px">
+              <div class="form-group">
+                <label class="form-label">Nama *</label>
+                <input type="text" class="form-input" id="c-name" placeholder="Budi Santoso">
+              </div>
+              <div class="form-group">
+                <label class="form-label">No. WhatsApp *</label>
+                <input type="text" class="form-input" id="c-phone" placeholder="628123456789">
+              </div>
+            </div>
+            <div class="form-row" style="margin-bottom:12px">
+              <div class="form-group">
+                <label class="form-label">Email</label>
+                <input type="email" class="form-input" id="c-email" placeholder="budi@example.com">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Grup / Tag</label>
+                <input type="text" class="form-input" id="c-group" placeholder="pelanggan, vip, dll">
+              </div>
+            </div>
+            <div class="form-group" style="margin-bottom:16px">
+              <label class="form-label">Kolom Custom (JSON)</label>
+              <input type="text" class="form-input" id="c-custom" placeholder='{"perusahaan":"PT ABC","jabatan":"Manager"}'>
+              <span class="form-hint">Opsional — digunakan sebagai variabel di template</span>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-primary" onclick="addContact()">Simpan Kontak</button>
+              <button class="btn btn-secondary" onclick="closeAddContact()">Batal</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="overflow:hidden">
+          <div class="card-header">
+            <span class="card-title">Daftar Kontak (<span id="contact-count">0</span>)</span>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input type="text" class="form-input" style="width:220px" placeholder="Cari nama atau nomor..." oninput="filterContacts(this.value)" id="contact-search">
+              <button class="btn btn-danger btn-sm hidden" id="btn-delete-selected" onclick="deleteSelected()">
+                Hapus Dipilih
+              </button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:36px"><input type="checkbox" id="check-all" onchange="toggleSelectAll(this)"></th>
+                  <th>Nama</th>
+                  <th>No. WhatsApp</th>
+                  <th>Email</th>
+                  <th>Grup</th>
+                  <th>Status</th>
+                  <th style="width:80px"></th>
+                </tr>
+              </thead>
+              <tbody id="contact-tbody">
+                <tr><td colspan="7"><div class="empty-state"><div class="empty-title">Belum ada kontak</div><div class="empty-sub">Tambah kontak manual atau import dari CSV / Google Sheets</div></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TEMPLATE PAGE -->
+    <div id="page-template" class="hidden">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Template Pesan</div>
+          <div class="page-sub">Buat dan kelola template untuk pengiriman massal</div>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-primary" onclick="saveTemplate()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            Simpan Template
+          </button>
+        </div>
+      </div>
+
+      <div class="page-content">
+        <div style="display:grid;grid-template-columns:1fr 360px;gap:20px">
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div class="card">
+              <div class="card-header"><span class="card-title">Pengaturan Template</span></div>
+              <div class="card-body" style="display:flex;flex-direction:column;gap:14px">
+                <div class="form-group">
+                  <label class="form-label">Nama Template *</label>
+                  <input type="text" class="form-input" id="tpl-name" placeholder="Promosi Ramadan 2025">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Jenis Pengiriman</label>
+                  <select class="form-input" id="tpl-type" onchange="toggleEmailFields()">
+                    <option value="whatsapp">WhatsApp</option>
+                    <option value="email">Email</option>
+                    <option value="both">WhatsApp + Email</option>
+                  </select>
+                </div>
+                <div class="form-group" id="email-subject-group" style="display:none">
+                  <label class="form-label">Subject Email</label>
+                  <input type="text" class="form-input" id="tpl-subject" placeholder="Promo Spesial untuk {nama}!">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Pesan *</label>
+                  <textarea class="form-input" id="tpl-message" rows="10" placeholder="Halo {nama}, kami ingin menyampaikan..."></textarea>
+                  <span class="form-hint">Karakter: <span id="char-count">0</span></span>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Delay antar pesan (detik)</label>
+                  <input type="number" class="form-input" id="tpl-delay" value="3" min="1" max="60" style="width:100px">
+                  <span class="form-hint">Minimal 1 detik untuk menghindari spam detection</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div class="card">
+              <div class="card-header"><span class="card-title">Variabel Tersedia</span></div>
+              <div class="card-body">
+                <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Klik untuk sisipkan ke pesan:</p>
+                <div id="var-chips">
+                  <span class="var-chip" onclick="insertVar('{nama}')">&#123;nama&#125;</span>
+                  <span class="var-chip" onclick="insertVar('{nomor}')">&#123;nomor&#125;</span>
+                  <span class="var-chip" onclick="insertVar('{email}')">&#123;email&#125;</span>
+                  <span class="var-chip" onclick="insertVar('{grup}')">&#123;grup&#125;</span>
+                  <span class="var-chip" onclick="insertVar('{tanggal}')">&#123;tanggal&#125;</span>
+                  <span class="var-chip" onclick="insertVar('{waktu}')">&#123;waktu&#125;</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header"><span class="card-title">Preview Pesan</span></div>
+              <div class="card-body">
+                <div style="background:#e5ddd5;border-radius:10px;padding:12px;min-height:120px">
+                  <div style="background:#fff;border-radius:8px;padding:10px 12px;font-size:13px;line-height:1.6;max-width:90%;color:#111;white-space:pre-wrap;word-break:break-word" id="tpl-preview">Tulis pesan di sebelah kiri untuk melihat preview...</div>
+                  <div style="font-size:10px;color:#666;text-align:right;margin-top:4px">13:24 ✓✓</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header"><span class="card-title">Template Tersimpan</span></div>
+              <div class="card-body" style="padding:8px 12px">
+                <div id="saved-templates-list">
+                  <p style="font-size:12px;color:var(--muted);padding:8px 0">Belum ada template tersimpan.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SEND PAGE -->
+    <div id="page-send" class="hidden">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Kirim Pesan</div>
+          <div class="page-sub">Kirim pesan massal ke kontak yang dipilih</div>
+        </div>
+      </div>
+
+      <div class="page-content">
+        <div style="display:grid;grid-template-columns:1fr 380px;gap:20px">
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div class="card">
+              <div class="card-header"><span class="card-title">Pilih Template</span></div>
+              <div class="card-body">
+                <div class="form-group">
+                  <label class="form-label">Template Pesan</label>
+                  <select class="form-input" id="send-template" onchange="loadSendTemplate()">
+                    <option value="">-- Pilih Template --</option>
+                  </select>
+                </div>
+                <div style="margin-top:12px;background:#f8f9fa;border-radius:8px;padding:12px;font-size:13px;color:var(--muted);min-height:60px;white-space:pre-wrap;line-height:1.6" id="send-preview">Pilih template untuk melihat preview pesan</div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header"><span class="card-title">Pilih Penerima</span></div>
+              <div class="card-body" style="display:flex;flex-direction:column;gap:14px">
+                <div class="form-group">
+                  <label class="form-label">Filter Grup / Tag</label>
+                  <select class="form-input" id="send-group" onchange="filterSendContacts()">
+                    <option value="">Semua Kontak</option>
+                  </select>
+                </div>
+
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+                  <span style="font-size:12px;font-weight:500;color:var(--muted)">Pilih kontak (<span id="send-selected-count">0</span> dipilih)</span>
+                  <button class="btn btn-ghost btn-sm" onclick="toggleSelectAllSend()">Pilih Semua</button>
+                </div>
+                <div id="send-contact-list" style="max-height:280px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;display:flex;flex-direction:column">
+                  <div class="empty-state" style="padding:24px">
+                    <div class="empty-title">Belum ada kontak</div>
+                    <div class="empty-sub">Tambah kontak dulu di menu Kontak</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right panel -->
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div class="card">
+              <div class="card-header"><span class="card-title">Pengaturan Pengiriman</span></div>
+              <div class="card-body" style="display:flex;flex-direction:column;gap:12px">
+                <div class="form-group">
+                  <label class="form-label">Delay Antar Pesan (detik)</label>
+                  <input type="number" class="form-input" id="send-delay" value="3" min="1" max="60">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Jadwalkan Pengiriman</label>
+                  <input type="datetime-local" class="form-input" id="send-schedule">
+                  <span class="form-hint">Kosongkan untuk kirim sekarang</span>
+                </div>
+                <hr style="border:none;border-top:1px solid var(--border-light);margin:4px 0">
+                <div style="background:var(--bg);border-radius:8px;padding:12px;font-size:13px">
+                  <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+                    <span style="color:var(--muted)">Penerima dipilih</span>
+                    <span style="font-weight:600" id="send-summary-count">0</span>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+                    <span style="color:var(--muted)">Estimasi waktu</span>
+                    <span style="font-weight:600" id="send-eta">—</span>
+                  </div>
+                  <div style="display:flex;justify-content:space-between">
+                    <span style="color:var(--muted)">Jenis</span>
+                    <span style="font-weight:600" id="send-type-label">—</span>
+                  </div>
+                </div>
+                <button class="btn btn-primary" onclick="startSending()" id="btn-start-send" style="width:100%;justify-content:center;padding:10px">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                  Mulai Kirim
+                </button>
+              </div>
+            </div>
+
+            <div class="card hidden" id="send-progress-card">
+              <div class="card-header"><span class="card-title">Progress Pengiriman</span></div>
+              <div class="card-body" style="display:flex;flex-direction:column;gap:12px">
+                <div class="send-info">
+                  <span class="send-count"><span id="prog-done">0</span> / <span id="prog-total">0</span></span>
+                  <span class="send-eta" id="prog-eta">Menghitung...</span>
+                </div>
+                <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+                <div style="display:flex;gap:8px">
+                  <span class="badge badge-success" id="prog-ok-badge">✓ 0</span>
+                  <span class="badge badge-error" id="prog-err-badge">✗ 0</span>
+                </div>
+                <button class="btn btn-danger btn-sm" onclick="stopSending()" id="btn-stop-send">Hentikan</button>
+              </div>
+            </div>
+
+            <div class="card" id="send-log-card">
+              <div class="card-header"><span class="card-title">Log Pengiriman</span></div>
+              <div class="card-body" style="padding:0">
+                <div class="log-wrap" id="send-log">
+                  <div class="log-line"><span class="log-info log-time">—</span><span class="log-info">Siap mengirim. Pilih template dan kontak, lalu klik Mulai Kirim.</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HISTORY PAGE -->
+    <div id="page-history" class="hidden">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Riwayat Pengiriman</div>
+          <div class="page-sub">Log semua sesi pengiriman pesan</div>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-secondary" onclick="clearHistory()">Hapus Riwayat</button>
+        </div>
+      </div>
+      <div class="page-content">
+        <div class="card">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Waktu</th>
+                  <th>Template</th>
+                  <th>Jenis</th>
+                  <th>Total</th>
+                  <th>Berhasil</th>
+                  <th>Gagal</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="history-tbody">
+                <tr><td colspan="7"><div class="empty-state"><div class="empty-title">Belum ada riwayat</div></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GOOGLE PAGE -->
+    <div id="page-google" class="hidden">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Integrasi Google Sheets</div>
+          <div class="page-sub">Import kontak langsung dari Google Spreadsheet</div>
+        </div>
+      </div>
+      <div class="page-content">
+        <div class="alert alert-info">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span>Untuk integrasi Google Sheets nyata, diperlukan Google OAuth Client ID dan konfigurasi server. Di versi demo ini, Anda bisa mensimulasikan import data spreadsheet.</span>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+          <div class="card">
+            <div class="card-header"><span class="card-title">Hubungkan Google</span></div>
+            <div class="card-body" style="display:flex;flex-direction:column;gap:14px">
+              <div id="google-connected" class="hidden">
+                <div class="alert alert-success" style="margin-bottom:12px">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                  Terhubung sebagai: <strong id="google-email-text"></strong>
+                </div>
+                <button class="btn btn-secondary" onclick="disconnectGoogle()">Logout Google</button>
+              </div>
+              <div id="google-disconnected">
+                <p style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.6">Hubungkan akun Google Anda untuk mengakses Google Sheets secara langsung.</p>
+                <button class="btn btn-primary" onclick="connectGoogle()">
+                  <svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+                  Hubungkan ke Google
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header"><span class="card-title">Import dari Spreadsheet</span></div>
+            <div class="card-body" style="display:flex;flex-direction:column;gap:12px">
+              <div class="form-group">
+                <label class="form-label">URL Spreadsheet</label>
+                <input type="text" class="form-input" id="sheet-url" placeholder="https://docs.google.com/spreadsheets/d/...">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Range Data</label>
+                <input type="text" class="form-input" id="sheet-range" value="Sheet1!A2:E" placeholder="Sheet1!A2:E">
+                <span class="form-hint">Format: NamaSheet!KolomAwal:KolomAkhir</span>
+              </div>
+              <div class="alert alert-warn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                <span>Header kolom yang dikenali: <strong>nama, nomor/phone, email, grup/group</strong></span>
+              </div>
+              <button class="btn btn-primary" onclick="importFromSheet()">Ambil Data</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card hidden" id="sheet-preview-card">
+          <div class="card-header">
+            <span class="card-title">Preview Data (<span id="sheet-preview-count">0</span> baris)</span>
+            <button class="btn btn-primary btn-sm" onclick="importSheetData()">Import Semua ke Kontak</button>
+          </div>
+          <div class="table-wrap" id="sheet-preview-table"></div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- WA Modal -->
+<div class="modal-overlay hidden" id="wa-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Hubungkan WhatsApp</span>
+      <button class="close-btn" onclick="closeWAModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div id="qr-container" class="qr-wrap">
+        <div id="qr-code"></div>
+      </div>
+      <div id="qr-hint" class="qr-hint">
+        <strong>Cara menghubungkan WhatsApp:</strong><br>
+        1. Buka WhatsApp di HP Anda<br>
+        2. Tap ⋮ → Perangkat Tertaut → Tautkan Perangkat<br>
+        3. Scan QR code di atas
+      </div>
+      <div id="wa-connecting" class="hidden">
+        <div class="badge badge-pending" style="padding:6px 14px;font-size:13px">
+          <span class="status-dot connecting" style="margin-right:4px"></span>
+          Menunggu scan QR...
+        </div>
+      </div>
+      <div id="wa-connected-info" class="hidden">
+        <div class="alert alert-success">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+          WhatsApp berhasil terhubung!
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeWAModal()">Tutup</button>
+      <button class="btn btn-primary" id="btn-simulate-scan" onclick="simulateScan()">Simulasi Scan QR</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add contact modal via CSV -->
+<input type="file" id="csv-file-input" accept=".csv" style="display:none" onchange="handleCSVImport(event)">
+
+<script>
+// ============ STATE ============
+let state = {
+  waConnected: false,
+  waPhone: '',
+  googleConnected: false,
+  googleEmail: '',
+  contacts: JSON.parse(localStorage.getItem('ws-contacts') || '[]'),
+  templates: JSON.parse(localStorage.getItem('ws-templates') || '[]'),
+  history: JSON.parse(localStorage.getItem('ws-history') || '[]'),
+  sendingActive: false,
+  sendingTimer: null,
+  sheetPreviewData: [],
+  selectedSend: new Set(),
+  selectedContacts: new Set(),
+  stats: JSON.parse(localStorage.getItem('ws-stats') || '{"sent":0,"ok":0,"fail":0}')
+};
+
+function save() {
+  localStorage.setItem('ws-contacts', JSON.stringify(state.contacts));
+  localStorage.setItem('ws-templates', JSON.stringify(state.templates));
+  localStorage.setItem('ws-history', JSON.stringify(state.history));
+  localStorage.setItem('ws-stats', JSON.stringify(state.stats));
+}
+
+// ============ NAV ============
+function showPage(page) {
+  document.querySelectorAll('[id^="page-"]').forEach(el => el.classList.add('hidden'));
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  document.getElementById('page-' + page).classList.remove('hidden');
+  const navEl = document.getElementById('nav-' + page);
+  if (navEl) navEl.classList.add('active');
+
+  if (page === 'dashboard') refreshDashboard();
+  if (page === 'contacts') renderContacts();
+  if (page === 'template') refreshTemplateList();
+  if (page === 'send') refreshSendPage();
+  if (page === 'history') renderHistory();
+}
+
+// ============ WA MODAL ============
+function openWAModal() {
+  if (state.waConnected) {
+    if (confirm('Putuskan koneksi WhatsApp?')) disconnectWA();
+    return;
+  }
+  document.getElementById('wa-modal').classList.remove('hidden');
+  generateQR();
+}
+function closeWAModal() {
+  document.getElementById('wa-modal').classList.add('hidden');
+}
+function generateQR() {
+  const qrDiv = document.getElementById('qr-code');
+  qrDiv.innerHTML = '';
+  new QRCode(qrDiv, {
+    text: 'washeet://connect/' + Date.now(),
+    width: 200, height: 200,
+    colorDark: '#000', colorLight: '#fff',
+    correctLevel: QRCode.CorrectLevel.M
+  });
+}
+function simulateScan() {
+  document.getElementById('wa-connecting').classList.remove('hidden');
+  document.getElementById('btn-simulate-scan').disabled = true;
+  setTimeout(() => {
+    state.waConnected = true;
+    state.waPhone = '6281234567890';
+    updateWAStatus();
+    document.getElementById('wa-connected-info').classList.remove('hidden');
+    document.getElementById('wa-connecting').classList.add('hidden');
+    document.getElementById('qr-container').classList.add('hidden');
+    document.getElementById('qr-hint').classList.add('hidden');
+    setTimeout(closeWAModal, 1500);
+  }, 2000);
+}
+function disconnectWA() {
+  state.waConnected = false;
+  state.waPhone = '';
+  updateWAStatus();
+  // reset modal state
+  document.getElementById('wa-connecting').classList.add('hidden');
+  document.getElementById('wa-connected-info').classList.add('hidden');
+  document.getElementById('qr-container').classList.remove('hidden');
+  document.getElementById('qr-hint').classList.remove('hidden');
+  document.getElementById('btn-simulate-scan').disabled = false;
+}
+function updateWAStatus() {
+  const dot = document.getElementById('status-dot');
+  const text = document.getElementById('status-text');
+  const sub = document.getElementById('status-sub');
+  if (state.waConnected) {
+    dot.className = 'status-dot connected';
+    text.textContent = 'Terhubung';
+    sub.textContent = state.waPhone;
+  } else {
+    dot.className = 'status-dot';
+    text.textContent = 'Tidak Terhubung';
+    sub.textContent = 'Klik untuk hubungkan';
+  }
+}
+
+// ============ CONTACTS ============
+function openAddContact() { document.getElementById('add-contact-form').classList.remove('hidden'); }
+function closeAddContact() {
+  document.getElementById('add-contact-form').classList.add('hidden');
+  ['c-name','c-phone','c-email','c-group','c-custom'].forEach(id => document.getElementById(id).value = '');
+}
+function addContact(data) {
+  const c = data || {
+    id: Date.now(),
+    nama: document.getElementById('c-name').value.trim(),
+    nomor: sanitizePhone(document.getElementById('c-phone').value.trim()),
+    email: document.getElementById('c-email').value.trim(),
+    grup: document.getElementById('c-group').value.trim(),
+    custom: {},
+    status: 'active'
+  };
+  if (!c.nama || !c.nomor) { alert('Nama dan nomor wajib diisi!'); return; }
+  if (!data) {
+    try { const raw = document.getElementById('c-custom').value.trim(); if (raw) c.custom = JSON.parse(raw); } catch(e) {}
+  }
+  state.contacts.push(c);
+  save();
+  renderContacts();
+  if (!data) closeAddContact();
+  updateBadge();
+}
+function sanitizePhone(p) {
+  p = p.replace(/\D/g,'');
+  if (p.startsWith('0')) p = '62' + p.slice(1);
+  if (!p.startsWith('62')) p = '62' + p;
+  return p;
+}
+function deleteContact(id) {
+  if (!confirm('Hapus kontak ini?')) return;
+  state.contacts = state.contacts.filter(c => c.id !== id);
+  save(); renderContacts(); updateBadge();
+}
+function deleteSelected() {
+  if (!confirm(`Hapus ${state.selectedContacts.size} kontak?`)) return;
+  state.contacts = state.contacts.filter(c => !state.selectedContacts.has(c.id));
+  state.selectedContacts.clear();
+  save(); renderContacts(); updateBadge();
+}
+function toggleSelectAll(cb) {
+  const visible = getFilteredContacts();
+  if (cb.checked) visible.forEach(c => state.selectedContacts.add(c.id));
+  else state.selectedContacts.clear();
+  renderContacts(document.getElementById('contact-search').value);
+}
+function getFilteredContacts(q) {
+  if (!q) return state.contacts;
+  q = q.toLowerCase();
+  return state.contacts.filter(c => c.nama.toLowerCase().includes(q) || c.nomor.includes(q) || (c.email||'').toLowerCase().includes(q));
+}
+function filterContacts(q) { renderContacts(q); }
+function renderContacts(q) {
+  const list = getFilteredContacts(q);
+  document.getElementById('contact-count').textContent = state.contacts.length;
+  document.getElementById('contact-badge').textContent = state.contacts.length;
+  const tbody = document.getElementById('contact-tbody');
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-title">Tidak ada kontak</div></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = list.map(c => `
+    <tr>
+      <td><input type="checkbox" ${state.selectedContacts.has(c.id)?'checked':''} onchange="toggleContactCheck(${c.id},this)"></td>
+      <td class="td-name">${esc(c.nama)}</td>
+      <td class="td-phone">${c.nomor}</td>
+      <td>${esc(c.email||'—')}</td>
+      <td>${c.grup ? `<span class="badge badge-gray">${esc(c.grup)}</span>` : '—'}</td>
+      <td><span class="badge badge-success">Aktif</span></td>
+      <td><button class="btn btn-ghost btn-sm" onclick="deleteContact(${c.id})" title="Hapus">✕</button></td>
+    </tr>
+  `).join('');
+  const hasSelected = state.selectedContacts.size > 0;
+  document.getElementById('btn-delete-selected').classList.toggle('hidden', !hasSelected);
+}
+function toggleContactCheck(id, cb) {
+  if (cb.checked) state.selectedContacts.add(id);
+  else state.selectedContacts.delete(id);
+  document.getElementById('btn-delete-selected').classList.toggle('hidden', state.selectedContacts.size === 0);
+}
+function updateBadge() { document.getElementById('contact-badge').textContent = state.contacts.length; }
+
+// ============ CSV IMPORT ============
+function importContactsCSV() { document.getElementById('csv-file-input').click(); }
+function handleCSVImport(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    const lines = ev.target.result.split('\n').filter(l => l.trim());
+    const header = lines[0].toLowerCase().split(',').map(h => h.trim().replace(/"/g,''));
+    const colMap = { nama: findCol(header,['nama','name','nama lengkap']), nomor: findCol(header,['nomor','phone','no','nomer','no hp','no. hp']), email: findCol(header,['email']), grup: findCol(header,['grup','group','tag','kategori']) };
+    let added = 0;
+    for (let i = 1; i < lines.length; i++) {
+      const cols = lines[i].split(',').map(v => v.trim().replace(/^"|"$/g,''));
+      const c = { id: Date.now()+i, nama: cols[colMap.nama]||'', nomor: sanitizePhone(cols[colMap.nomor]||''), email: cols[colMap.email]||'', grup: cols[colMap.grup]||'', custom: {}, status: 'active' };
+      if (c.nama && c.nomor && c.nomor.length > 6) { state.contacts.push(c); added++; }
+    }
+    save(); renderContacts(); updateBadge();
+    alert(`Berhasil import ${added} kontak dari CSV.`);
+    e.target.value = '';
+  };
+  reader.readAsText(file);
+}
+function findCol(headers, candidates) {
+  for (const c of candidates) { const i = headers.indexOf(c); if (i !== -1) return i; }
+  return 0;
+}
+
+// ============ TEMPLATE ============
+document.addEventListener('DOMContentLoaded', () => {
+  const msg = document.getElementById('tpl-message');
+  if (msg) {
+    msg.addEventListener('input', () => {
+      document.getElementById('char-count').textContent = msg.value.length;
+      updatePreview();
+    });
+  }
+});
+function updatePreview() {
+  const msg = document.getElementById('tpl-message').value;
+  const preview = msg
+    .replace(/\{nama\}/g, 'Budi Santoso')
+    .replace(/\{nomor\}/g, '6281234567890')
+    .replace(/\{email\}/g, 'budi@example.com')
+    .replace(/\{grup\}/g, 'pelanggan')
+    .replace(/\{tanggal\}/g, new Date().toLocaleDateString('id-ID'))
+    .replace(/\{waktu\}/g, new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}));
+  document.getElementById('tpl-preview').textContent = preview || 'Tulis pesan di sebelah kiri...';
+}
+function insertVar(v) {
+  const ta = document.getElementById('tpl-message');
+  const start = ta.selectionStart, end = ta.selectionEnd;
+  ta.value = ta.value.slice(0, start) + v + ta.value.slice(end);
+  ta.selectionStart = ta.selectionEnd = start + v.length;
+  ta.focus();
+  document.getElementById('char-count').textContent = ta.value.length;
+  updatePreview();
+}
+function toggleEmailFields() {
+  const type = document.getElementById('tpl-type').value;
+  document.getElementById('email-subject-group').style.display = (type==='email'||type==='both') ? 'flex' : 'none';
+}
+function saveTemplate() {
+  const name = document.getElementById('tpl-name').value.trim();
+  const msg = document.getElementById('tpl-message').value.trim();
+  if (!name || !msg) { alert('Nama template dan pesan wajib diisi!'); return; }
+  const tpl = {
+    id: Date.now(),
+    name,
+    type: document.getElementById('tpl-type').value,
+    subject: document.getElementById('tpl-subject').value.trim(),
+    message: msg,
+    delay: parseInt(document.getElementById('tpl-delay').value) || 3
+  };
+  state.templates.push(tpl);
+  save(); refreshTemplateList();
+  alert('Template berhasil disimpan!');
+}
+function deleteTemplate(id) {
+  if (!confirm('Hapus template ini?')) return;
+  state.templates = state.templates.filter(t => t.id !== id);
+  save(); refreshTemplateList();
+}
+function loadTemplate(id) {
+  const t = state.templates.find(t => t.id === id);
+  if (!t) return;
+  document.getElementById('tpl-name').value = t.name;
+  document.getElementById('tpl-type').value = t.type;
+  document.getElementById('tpl-subject').value = t.subject||'';
+  document.getElementById('tpl-message').value = t.message;
+  document.getElementById('tpl-delay').value = t.delay;
+  document.getElementById('char-count').textContent = t.message.length;
+  toggleEmailFields(); updatePreview();
+}
+function refreshTemplateList() {
+  const el = document.getElementById('saved-templates-list');
+  if (!state.templates.length) { el.innerHTML = '<p style="font-size:12px;color:var(--muted);padding:8px 0">Belum ada template.</p>'; return; }
+  el.innerHTML = state.templates.map(t => `
+    <div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid var(--border-light)">
+      <span style="font-size:13px;flex:1;cursor:pointer;font-weight:500" onclick="loadTemplate(${t.id})">${esc(t.name)}</span>
+      <span class="badge badge-gray" style="font-size:10px">${t.type}</span>
+      <button class="btn btn-ghost btn-sm" onclick="deleteTemplate(${t.id})">✕</button>
+    </div>
+  `).join('');
+  // also update send template select
+  const sel = document.getElementById('send-template');
+  if (sel) {
+    sel.innerHTML = '<option value="">-- Pilih Template --</option>' + state.templates.map(t => `<option value="${t.id}">${esc(t.name)}</option>`).join('');
+  }
+}
+
+// ============ SEND PAGE ============
+function refreshSendPage() {
+  refreshTemplateList();
+  refreshSendContacts();
+  refreshGroupFilter();
+}
+function refreshGroupFilter() {
+  const groups = [...new Set(state.contacts.map(c => c.grup).filter(Boolean))];
+  const sel = document.getElementById('send-group');
+  sel.innerHTML = '<option value="">Semua Kontak</option>' + groups.map(g => `<option value="${g}">${esc(g)}</option>`).join('');
+}
+function refreshSendContacts(filterGroup) {
+  let list = state.contacts;
+  if (filterGroup) list = list.filter(c => c.grup === filterGroup);
+  const el = document.getElementById('send-contact-list');
+  if (!list.length) {
+    el.innerHTML = `<div class="empty-state" style="padding:24px"><div class="empty-title">Tidak ada kontak</div></div>`;
+    return;
+  }
+  el.innerHTML = list.map(c => `
+    <label style="display:flex;align-items:center;gap:10px;padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border-light);font-size:13px;transition:background .1s" onmouseenter="this.style.background='var(--bg)'" onmouseleave="this.style.background=''">
+      <input type="checkbox" value="${c.id}" onchange="updateSendSelection()" ${state.selectedSend.has(c.id)?'checked':''}>
+      <span style="flex:1;font-weight:500">${esc(c.nama)}</span>
+      <span style="color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:11px">${c.nomor}</span>
+    </label>
+  `).join('');
+  updateSendSelection();
+}
+function filterSendContacts() {
+  const g = document.getElementById('send-group').value;
+  state.selectedSend.clear();
+  refreshSendContacts(g);
+}
+function updateSendSelection() {
+  state.selectedSend.clear();
+  document.querySelectorAll('#send-contact-list input[type=checkbox]:checked').forEach(cb => state.selectedSend.add(parseInt(cb.value)));
+  const count = state.selectedSend.size;
+  document.getElementById('send-selected-count').textContent = count;
+  document.getElementById('send-summary-count').textContent = count;
+  const delay = parseInt(document.getElementById('send-delay').value) || 3;
+  const secs = count * delay;
+  document.getElementById('send-eta').textContent = count ? formatTime(secs) : '—';
+}
+function toggleSelectAllSend() {
+  const cbs = document.querySelectorAll('#send-contact-list input[type=checkbox]');
+  const allChecked = [...cbs].every(cb => cb.checked);
+  cbs.forEach(cb => { cb.checked = !allChecked; if (!allChecked) state.selectedSend.add(parseInt(cb.value)); else state.selectedSend.delete(parseInt(cb.value)); });
+  updateSendSelection();
+}
+function loadSendTemplate() {
+  const id = parseInt(document.getElementById('send-template').value);
+  const tpl = state.templates.find(t => t.id === id);
+  const preview = document.getElementById('send-preview');
+  const typeLabel = document.getElementById('send-type-label');
+  if (!tpl) { preview.textContent = 'Pilih template untuk melihat preview pesan'; typeLabel.textContent = '—'; return; }
+  preview.textContent = tpl.message.replace(/\{nama\}/g,'Budi Santoso').replace(/\{nomor\}/g,'6281234567890').replace(/\{tanggal\}/g,new Date().toLocaleDateString('id-ID'));
+  typeLabel.textContent = tpl.type === 'whatsapp' ? 'WhatsApp' : tpl.type === 'email' ? 'Email' : 'WA + Email';
+  document.getElementById('send-delay').value = tpl.delay || 3;
+  updateSendSelection();
+}
+
+// ============ SENDING ============
+function startSending() {
+  const tplId = parseInt(document.getElementById('send-template').value);
+  if (!tplId) { alert('Pilih template terlebih dahulu!'); return; }
+  const tpl = state.templates.find(t => t.id === tplId);
+  if (!tpl) return;
+  if (state.selectedSend.size === 0) { alert('Pilih minimal satu kontak!'); return; }
+  if (tpl.type !== 'email' && !state.waConnected) {
+    if (!confirm('WhatsApp belum terhubung! Gunakan mode simulasi?')) return;
+  }
+  const contacts = state.contacts.filter(c => state.selectedSend.has(c.id));
+  const delay = (parseInt(document.getElementById('send-delay').value) || 3) * 1000;
+  state.sendingActive = true;
+  document.getElementById('send-progress-card').classList.remove('hidden');
+  document.getElementById('btn-start-send').disabled = true;
+  const total = contacts.length;
+  let done = 0, ok = 0, err = 0;
+  document.getElementById('prog-total').textContent = total;
+  clearLog();
+  addLog('info', `Mulai pengiriman ${total} pesan...`);
+  const session = { id: Date.now(), template: tpl.name, type: tpl.type, total, ok: 0, fail: 0, time: new Date().toLocaleString('id-ID'), status: 'running' };
+  function sendNext() {
+    if (!state.sendingActive || done >= total) {
+      session.status = state.sendingActive ? 'selesai' : 'dihentikan';
+      session.ok = ok; session.fail = err;
+      state.history.unshift(session);
+      state.stats.sent += done; state.stats.ok += ok; state.stats.fail += err;
+      save(); refreshHistory();
+      addLog('info', `Selesai: ${ok} berhasil, ${err} gagal.`);
+      document.getElementById('btn-start-send').disabled = false;
+      state.sendingActive = false;
+      return;
+    }
+    const c = contacts[done];
+    const msg = renderMsg(tpl.message, c);
+    const success = Math.random() > 0.08; // 92% success rate
+    setTimeout(() => {
+      done++;
+      if (success) { ok++; addLog('ok', `✓ ${c.nama} (${c.nomor})`); }
+      else { err++; addLog('err', `✗ ${c.nama} — Gagal terkirim`); }
+      document.getElementById('prog-done').textContent = done;
+      document.getElementById('prog-ok-badge').textContent = '✓ ' + ok;
+      document.getElementById('prog-err-badge').textContent = '✗ ' + err;
+      const pct = Math.round(done/total*100);
+      document.getElementById('progress-fill').style.width = pct + '%';
+      const left = (total - done) * delay / 1000;
+      document.getElementById('prog-eta').textContent = done < total ? 'Sisa: ' + formatTime(left) : 'Selesai';
+      sendNext();
+    }, delay);
+  }
+  sendNext();
+}
+function stopSending() {
+  state.sendingActive = false;
+  addLog('warn', 'Pengiriman dihentikan oleh pengguna.');
+}
+function renderMsg(tpl, c) {
+  return tpl
+    .replace(/\{nama\}/g, c.nama)
+    .replace(/\{nomor\}/g, c.nomor)
+    .replace(/\{email\}/g, c.email||'')
+    .replace(/\{grup\}/g, c.grup||'')
+    .replace(/\{tanggal\}/g, new Date().toLocaleDateString('id-ID'))
+    .replace(/\{waktu\}/g, new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}));
+}
+function clearLog() { document.getElementById('send-log').innerHTML = ''; }
+function addLog(type, msg) {
+  const el = document.getElementById('send-log');
+  const time = new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const cls = {ok:'log-ok',err:'log-err',info:'log-info',warn:'log-warn'}[type]||'log-info';
+  el.innerHTML += `<div class="log-line"><span class="log-time">${time}</span><span class="${cls}">${esc(msg)}</span></div>`;
+  el.scrollTop = el.scrollHeight;
+}
+
+// ============ HISTORY ============
+function renderHistory() {
+  const tbody = document.getElementById('history-tbody');
+  if (!state.history.length) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-title">Belum ada riwayat</div></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = state.history.map(h => `
+    <tr>
+      <td>${h.time}</td>
+      <td><strong>${esc(h.template)}</strong></td>
+      <td><span class="badge badge-gray">${h.type}</span></td>
+      <td>${h.total}</td>
+      <td style="color:#166534;font-weight:500">${h.ok}</td>
+      <td style="color:var(--danger);font-weight:500">${h.fail}</td>
+      <td><span class="badge ${h.status==='selesai'?'badge-success':'badge-pending'}">${h.status}</span></td>
+    </tr>
+  `).join('');
+}
+function refreshHistory() { if (!document.getElementById('page-history').classList.contains('hidden')) renderHistory(); }
+function clearHistory() {
+  if (!confirm('Hapus semua riwayat pengiriman?')) return;
+  state.history = [];
+  save(); renderHistory();
+}
+
+// ============ DASHBOARD ============
+function refreshDashboard() {
+  document.getElementById('stat-sent').textContent = state.stats.sent;
+  document.getElementById('stat-ok').textContent = state.stats.ok;
+  document.getElementById('stat-fail').textContent = state.stats.fail;
+  document.getElementById('stat-contacts').textContent = state.contacts.length;
+  const recent = document.getElementById('dashboard-recent');
+  if (!state.history.length) {
+    recent.innerHTML = `<div class="empty-state"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></div><div class="empty-title">Belum ada pengiriman</div><div class="empty-sub">Mulai kirim pesan massal dengan klik tombol Kirim Sekarang</div></div>`;
+    return;
+  }
+  recent.innerHTML = `<div class="table-wrap"><table><thead><tr><th>Waktu</th><th>Template</th><th>Total</th><th>Berhasil</th><th>Status</th></tr></thead><tbody>${state.history.slice(0,5).map(h=>`<tr><td>${h.time}</td><td>${esc(h.template)}</td><td>${h.total}</td><td style="color:#166534;font-weight:500">${h.ok}</td><td><span class="badge ${h.status==='selesai'?'badge-success':'badge-pending'}">${h.status}</span></td></tr>`).join('')}</tbody></table></div>`;
+}
+
+// ============ GOOGLE ============
+function connectGoogle() {
+  // Simulate OAuth flow
+  setTimeout(() => {
+    state.googleConnected = true;
+    state.googleEmail = 'user@gmail.com';
+    document.getElementById('google-disconnected').classList.add('hidden');
+    document.getElementById('google-connected').classList.remove('hidden');
+    document.getElementById('google-email-text').textContent = state.googleEmail;
+  }, 800);
+}
+function disconnectGoogle() {
+  state.googleConnected = false;
+  state.googleEmail = '';
+  document.getElementById('google-connected').classList.add('hidden');
+  document.getElementById('google-disconnected').classList.remove('hidden');
+}
+function importFromSheet() {
+  const url = document.getElementById('sheet-url').value.trim();
+  const range = document.getElementById('sheet-range').value.trim() || 'Sheet1!A2:E';
+  if (!url && !state.googleConnected) {
+    // Generate demo data
+    generateDemoSheetData();
+    return;
+  }
+  if (!url) { alert('Masukkan URL Spreadsheet!'); return; }
+  generateDemoSheetData();
+}
+function generateDemoSheetData() {
+  const demos = [
+    {nama:'Ahmad Fauzi',nomor:'6281111111111',email:'ahmad@example.com',grup:'pelanggan'},
+    {nama:'Siti Rahayu',nomor:'6282222222222',email:'siti@example.com',grup:'vip'},
+    {nama:'Budi Prasetyo',nomor:'6283333333333',email:'budi@example.com',grup:'pelanggan'},
+    {nama:'Dewi Lestari',nomor:'6284444444444',email:'dewi@example.com',grup:'member'},
+    {nama:'Eko Santoso',nomor:'6285555555555',email:'eko@example.com',grup:'vip'},
+  ];
+  state.sheetPreviewData = demos;
+  const card = document.getElementById('sheet-preview-card');
+  card.classList.remove('hidden');
+  document.getElementById('sheet-preview-count').textContent = demos.length;
+  document.getElementById('sheet-preview-table').innerHTML = `
+    <table>
+      <thead><tr><th>Nama</th><th>Nomor</th><th>Email</th><th>Grup</th></tr></thead>
+      <tbody>${demos.map(r=>`<tr><td>${esc(r.nama)}</td><td class="td-phone">${r.nomor}</td><td>${esc(r.email)}</td><td><span class="badge badge-gray">${esc(r.grup)}</span></td></tr>`).join('')}</tbody>
+    </table>`;
+}
+function importSheetData() {
+  state.sheetPreviewData.forEach((r,i) => {
+    const c = { id: Date.now()+i, nama: r.nama, nomor: sanitizePhone(r.nomor), email: r.email, grup: r.grup, custom: {}, status: 'active' };
+    state.contacts.push(c);
+  });
+  save(); updateBadge();
+  alert(`${state.sheetPreviewData.length} kontak berhasil diimport!`);
+  showPage('contacts');
+}
+
+// ============ UTILS ============
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function formatTime(s) {
+  if (s < 60) return Math.round(s) + ' detik';
+  if (s < 3600) return Math.round(s/60) + ' menit';
+  return (s/3600).toFixed(1) + ' jam';
+}
+
+// ============ INIT ============
+document.addEventListener('DOMContentLoaded', () => {
+  showPage('dashboard');
+  updateBadge();
+  // Load demo template if none exist
+  if (!state.templates.length) {
+    state.templates.push({
+      id: 1,
+      name: 'Promo Umum',
+      type: 'whatsapp',
+      subject: '',
+      message: 'Halo {nama}! 👋\n\nKami dari WaSheet ingin menyampaikan promo spesial untuk Anda.\n\nDapatkan diskon *20%* untuk semua produk kami hari ini!\n\nHubungi kami untuk info lebih lanjut.\n\nTerima kasih,\nTim WaSheet',
+      delay: 3
+    });
+    save();
+  }
+});
+</script>
+</body>
+</html>
